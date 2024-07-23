@@ -1,6 +1,6 @@
 {
 	"name": "pptxtojson",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "A javascript tool for parsing .pptx file",
 	"type": "module",
 	"main": "./dist/index.umd.js",
@@ -12,6 +12,7 @@
 	"scripts": {
 		"clean:dist": "rimraf dist",
 		"dev": "rollup -c -w",
+		"build": "rollup -c",
 		"lint": "eslint src --ext .js,.jsx,.ts,.tsx"
 	},
 	"author": "info_together@aliyun.com",
