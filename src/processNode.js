@@ -209,7 +209,7 @@ export function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type,
       path: d,
     }
   }
-  if (shapType && type === 'obj') {
+  if (shapType && (type === 'obj' || !type)) {
     return {
       ...data,
       type: 'shape',
