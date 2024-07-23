@@ -1,31 +1,30 @@
 {
 	"name": "pptxtojson",
-	"version": "0.1.5",
+	"version": "0.0.2",
 	"description": "A javascript tool for parsing .pptx file",
 	"type": "module",
 	"main": "./dist/index.umd.js",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"clean:dist": "rimraf dist",
 		"dev": "rollup -c -w",
 		"lint": "eslint src --ext .js,.jsx,.ts,.tsx"
 	},
-	"author": "pipipi_pikachu@163.com",
+	"author": "info_together@aliyun.com",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/pipipi-pikachu/pptxtojson"
+		"url": ""
 	},
 	"keywords": [
 		"ppt",
 		"pptx",
 		"json"
 	],
-	"homepage": "https://github.com/pipipi-pikachu/pptxtojson",
 	"license": "MIT",
-	"publishConfig": {
-		"registry": "https://registry.npmjs.org"
-	},
 	"dependencies": {
 		"jszip": "^3.10.1",
 		"tinycolor2": "1.6.0",

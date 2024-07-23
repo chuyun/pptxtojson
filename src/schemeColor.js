@@ -1,4 +1,4 @@
-import { getTextByPathList } from './utils'
+import { getTextByPathList } from './utils.js'
 
 export function getSchemeColorFromTheme(schemeClr, warpObj) {
   switch (schemeClr) {
@@ -17,7 +17,7 @@ export function getSchemeColorFromTheme(schemeClr, warpObj) {
     default:
       break
   }
-  const refNode = getTextByPathList(warpObj['themeContent'], ['a:theme', 'a:themeElements', 'a:clrScheme', schemeClr])
+  const refNode = getTextByPathList(warpObj['themeContent'], ['a:theme', 'a:themeElements', 'a:clrScheme', schemeClr]) || getTextByPathList(warpObj['themeContent'], ['a:theme', 'a:themeElements', 'a:clrScheme', 'a:' + schemeClr])
   let color = getTextByPathList(refNode, ['a:srgbClr', 'attrs', 'val'])
   if (!color && refNode) color = getTextByPathList(refNode, ['a:sysClr', 'attrs', 'lastClr'])
   return color

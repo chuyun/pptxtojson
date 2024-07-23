@@ -1,4 +1,4 @@
-import { getSolidFill } from './fill'
+import { getSolidFill } from './fill.js'
 
 export function getShadow(node, warpObj) {
   const slideFactor = warpObj.options.slideFactor

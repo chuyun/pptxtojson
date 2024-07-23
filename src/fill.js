@@ -1,5 +1,5 @@
 import tinycolor from 'tinycolor2'
-import { getSchemeColorFromTheme } from './schemeColor'
+import { getSchemeColorFromTheme } from './schemeColor.js'
 import {
   applyShade,
   applyTint,
@@ -8,7 +8,7 @@ import {
   applyHueMod,
   applySatMod,
   hslToRgb,
-} from './color'
+} from './color.js'
 
 import {
   base64ArrayBuffer,
@@ -17,7 +17,7 @@ import {
   escapeHtml,
   getMimeType,
   toHex,
-} from './utils'
+} from './utils.js'
 
 export function getFillType(node) {
   let fillType = ''
@@ -66,16 +66,39 @@ export async function getPicFill(type, node, warpObj) {
 export async function getBgPicFill(bgPr, sorce, warpObj) {
   const picBase64 = await getPicFill(sorce, bgPr['a:blipFill'], warpObj)
   const aBlipNode = bgPr['a:blipFill']['a:blip']
+  const aBlipNodeTile = bgPr['a:blipFill']['a:tile']
+  const aBlipNodeTileAttrs = aBlipNodeTile?.['attrs']
 
   const aphaModFixNode = getTextByPathList(aBlipNode, ['a:alphaModFix', 'attrs'])
   let opacity = 1
   if (aphaModFixNode && aphaModFixNode['amt'] && aphaModFixNode['amt'] !== '') {
     opacity = parseInt(aphaModFixNode['amt']) / 100000
   }
+  // parseInt(getTextByPathList(solidFill, ['a:schemeClr', 'a:lumOff', 'attrs', 'val'])) / 100000
+  // <a:tile>：定义平铺属性。
+  // flip="none"：定义是否翻转图片（可选值：none, x, y, xy）。
+  // algn="tl"：定义平铺的对齐方式（可选值：tl（左上）, t（上）, tr（右上）, l（左）, ctr（中心）, r（右）, bl（左下）, b（下）, br（右下））。
+  // <a:tx>：定义水平平移量。
+  // <a:ty>：定义垂直平移量。
+  // <a:sx>：定义水平缩放比例。
+  // <a:sy>：定义垂直缩放比例。
 
+  let tile
+  if (aBlipNodeTileAttrs) {
+    tile = {
+      flip: aBlipNodeTileAttrs['flip'],
+      algn: aBlipNodeTileAttrs['algn'],
+      tx: parseInt(aBlipNodeTileAttrs['tx']) / 100000,
+      ty: parseInt(aBlipNodeTileAttrs['ty']) / 100000,
+      sx: parseInt(aBlipNodeTileAttrs['sx']) / 100000,
+      sy: parseInt(aBlipNodeTileAttrs['sy']) / 100000,
+    }
+  }
   return {
     picBase64,
     opacity,
+    // 平铺属性
+    tile
   }
 }
 
@@ -84,7 +107,7 @@ export function getBgGradientFill(bgPr, phClr, slideMasterContent, warpObj) {
     const grdFill = bgPr['a:gradFill']
     const gsLst = grdFill['a:gsLst']['a:gs']
     const color_ary = []
-    
+
     for (let i = 0; i < gsLst.length; i++) {
       const lo_color = getSolidFill(gsLst[i], slideMasterContent['p:sldMaster']['p:clrMap']['attrs'], phClr, warpObj)
       const pos = getTextByPathList(gsLst[i], ['attrs', 'pos'])
@@ -114,7 +137,7 @@ export async function getSlideBackgroundFill(warpObj) {
   const slideContent = warpObj['slideContent']
   const slideLayoutContent = warpObj['slideLayoutContent']
   const slideMasterContent = warpObj['slideMasterContent']
-  
+
   let bgPr = getTextByPathList(slideContent, ['p:sld', 'p:cSld', 'p:bg', 'p:bgPr'])
 
   let background = '#fff'
@@ -226,12 +249,13 @@ export function getShapeFill(node, isSvgMode, warpObj) {
   }
 
   if (!fillColor) {
-    const schemeClr = 'a:' + getTextByPathList(node, ['p:spPr', 'a:solidFill', 'a:schemeClr', 'attrs', 'val'])
+    // const schemeClr = 'a:' + getTextByPathList(node, ['p:spPr', 'a:solidFill', 'a:schemeClr', 'attrs', 'val'])
+    const schemeClr = getTextByPathList(node, ['p:spPr', 'a:solidFill', 'a:schemeClr', 'attrs', 'val'])
     fillColor = getSchemeColorFromTheme(schemeClr, warpObj)
   }
 
   if (!fillColor) {
-    const schemeClr = 'a:' + getTextByPathList(node, ['p:style', 'a:fillRef', 'a:schemeClr', 'attrs', 'val'])
+    const schemeClr = getTextByPathList(node, ['p:style', 'a:fillRef', 'a:schemeClr', 'attrs', 'val'])
     fillColor = getSchemeColorFromTheme(schemeClr, warpObj)
   }
 
@@ -246,7 +270,7 @@ export function getShapeFill(node, isSvgMode, warpObj) {
     const color = tinycolor(fillColor).toHsl()
     const lum = color.l * lumMod + lumOff
     return tinycolor({ h: color.h, s: color.s, l: lum, a: color.a }).toHexString()
-  } 
+  }
 
   if (isSvgMode) return 'none'
   return fillColor
@@ -260,11 +284,11 @@ export function getSolidFill(solidFill, clrMap, phClr, warpObj) {
 
   if (solidFill['a:srgbClr']) {
     color = getTextByPathList(solidFill['a:srgbClr'], ['attrs', 'val'])
-  } 
+  }
   else if (solidFill['a:schemeClr']) {
-    const schemeClr = 'a:' + getTextByPathList(solidFill['a:schemeClr'], ['attrs', 'val'])
+    const schemeClr = getTextByPathList(solidFill['a:schemeClr'], ['attrs', 'val'])
     color = getSchemeColorFromTheme(schemeClr, warpObj) || '#ffffffff'
-    
+
     let lumMod = parseInt(getTextByPathList(solidFill, ['a:schemeClr', 'a:lumMod', 'attrs', 'val'])) / 100000
     let lumOff = parseInt(getTextByPathList(solidFill, ['a:schemeClr', 'a:lumOff', 'attrs', 'val'])) / 100000
     if (isNaN(lumMod)) lumMod = 1.0
@@ -281,11 +305,11 @@ export function getSolidFill(solidFill, clrMap, phClr, warpObj) {
     const green = (defBultColorVals['g'].indexOf('%') !== -1) ? defBultColorVals['g'].split('%').shift() : defBultColorVals['g']
     const blue = (defBultColorVals['b'].indexOf('%') !== -1) ? defBultColorVals['b'].split('%').shift() : defBultColorVals['b']
     color = toHex(255 * (Number(red) / 100)) + toHex(255 * (Number(green) / 100)) + toHex(255 * (Number(blue) / 100))
-  } 
+  }
   else if (solidFill['a:prstClr']) {
     clrNode = solidFill['a:prstClr']
     color = getTextByPathList(clrNode, ['attrs', 'val'])
-  } 
+  }
   else if (solidFill['a:hslClr']) {
     clrNode = solidFill['a:hslClr']
     const defBultColorVals = clrNode['attrs']
@@ -294,7 +318,7 @@ export function getSolidFill(solidFill, clrMap, phClr, warpObj) {
     const lum = Number((defBultColorVals['lum'].indexOf('%') !== -1) ? defBultColorVals['lum'].split('%').shift() : defBultColorVals['lum']) / 100
     const hsl2rgb = hslToRgb(hue, sat, lum)
     color = toHex(hsl2rgb.r) + toHex(hsl2rgb.g) + toHex(hsl2rgb.b)
-  } 
+  }
   else if (solidFill['a:sysClr']) {
     clrNode = solidFill['a:sysClr']
     const sysClr = getTextByPathList(clrNode, ['attrs', 'lastClr'])
