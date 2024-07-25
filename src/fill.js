@@ -1,4 +1,5 @@
 import tinycolor from 'tinycolor2'
+import {v4 as uuidV4} from 'uuid'
 import { getSchemeColorFromTheme } from './schemeColor.js'
 import {
   applyShade,
@@ -11,13 +12,14 @@ import {
 } from './color.js'
 
 import {
-  base64ArrayBuffer,
+  // base64ArrayBuffer,
   getTextByPathList,
   angleToDegrees,
   escapeHtml,
   getMimeType,
   toHex,
 } from './utils.js'
+
 
 export function getFillType(node) {
   let fillType = ''
@@ -32,6 +34,7 @@ export function getFillType(node) {
 }
 
 export async function getPicFill(type, node, warpObj) {
+  const { uploadFn } = warpObj.options
   let img
   const rId = node['a:blip']['attrs']['r:embed']
   let imgPath
@@ -56,15 +59,25 @@ export async function getPicFill(type, node, warpObj) {
     const imgExt = imgPath.split('.').pop()
     if (imgExt === 'xml') return undefined
 
-    const imgArrayBuffer = await warpObj['zip'].file(imgPath).async('arraybuffer')
+    const blob = await warpObj['zip'].file(imgPath).async('blob')
     const imgMimeType = getMimeType(imgExt)
-    img = `data:${imgMimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
+    if (uploadFn) {
+      const name = imgPath.split('/').pop() || `${uuidV4()}.${imgExt.toLowerCase()}`
+      const file = new File([blob], uuidV4() + name, { type: imgMimeType, lastModified: Date.now() })
+      const res = await uploadFn([file])
+      img = res?.[0]
+    }
+    else {
+      // const imgArrayBuffer = await warpObj['zip'].file(imgPath).async('arraybuffer')
+      // img = `data:${imgMimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
+      img = blob
+    }
   }
   return img
 }
 
 export async function getBgPicFill(bgPr, sorce, warpObj) {
-  const picBase64 = await getPicFill(sorce, bgPr['a:blipFill'], warpObj)
+  const src = await getPicFill(sorce, bgPr['a:blipFill'], warpObj)
   const aBlipNode = bgPr['a:blipFill']['a:blip']
   const aBlipNodeTile = bgPr['a:blipFill']['a:tile']
   const aBlipNodeTileAttrs = aBlipNodeTile?.['attrs']
@@ -95,7 +108,7 @@ export async function getBgPicFill(bgPr, sorce, warpObj) {
     }
   }
   return {
-    picBase64,
+    src,
     opacity,
     // 平铺属性
     tile

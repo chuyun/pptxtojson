@@ -27,8 +27,13 @@ export async function parse(file, options = {}) {
   const { width, height, defaultTextStyle } = await getSlideInfo(zip, options)
   const themeContent = await loadTheme(zip)
 
-  for (const filename of filesInfo.slides) {
+  const length = filesInfo.slides.length
+
+  for (const [index, filename] of filesInfo.slides.entries()) {
     const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle, options)
+    options?.onProgress({
+      progress: ((index + 1) / length)
+    })
     slides.push(singleSlide)
   }
 

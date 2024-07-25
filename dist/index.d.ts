@@ -205,6 +205,8 @@ export interface Slide {
 export interface Options {
   slideFactor?: number
   fontsizeFactor?: number
+  uploadFn: (files: File[]) => Promise<string[]>
+  onProgress: ({ progress : number}) => void
 }
 
 export const parse: (file: ArrayBuffer, options?: Options) => Promise<{

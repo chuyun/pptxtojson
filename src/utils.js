@@ -1,6 +1,11 @@
 // import path from 'path'
 // import fs from 'fs'
 
+export function arrayBufferToBlob(arrayBuffer, mimeType) {
+  return new Blob([arrayBuffer], { type: mimeType })
+}
+
+
 export function base64ArrayBuffer(arrayBuffer) {
   const encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
   const bytes = new Uint8Array(arrayBuffer)
@@ -170,3 +175,29 @@ export function toHex(n) {
 //   //   fs.writeFileSync(outputPath, fileData)
 //   // })
 // }
+
+export function covert2CardEditorConfig(config) {
+  const {size, slides = []} = config
+
+  const cards = slides.map((item) => {
+    return {
+      id: item.id,
+      name: item.name,
+      elements: item.elements.map((element) => {
+        return {
+          id: element.id,
+
+        }
+      })
+    }
+  })
+
+
+  return {
+    resolution: {
+      width: size.width,
+      height: size.height,
+    },
+    cards: cards
+  }
+}

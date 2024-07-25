@@ -1,6 +1,8 @@
+import { v4 as uuidV4 } from 'uuid'
 import {
   angleToDegrees,
-  base64ArrayBuffer, escapeHtml,
+  // base64ArrayBuffer,
+  escapeHtml,
   extractFileExtension,
   getMimeType,
   getTextByPathList,
@@ -29,7 +31,7 @@ export async function processNodesInSlide(nodeKey, nodeValue, warpObj, source) {
       json = processCxnSpNode(nodeValue, warpObj, source)
       break
     case 'p:pic': // Image, Video, Audio
-      json = processPicNode(nodeValue, warpObj, source)
+      json = processMediaNode(nodeValue, warpObj, source)
       break
     case 'p:graphicFrame': // Chart, Diagram, Table
       json = await processGraphicFrameNode(nodeValue, warpObj, source)
@@ -224,7 +226,8 @@ export function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type,
   }
 }
 
-export async function processPicNode(node, warpObj, source) {
+export async function processMediaNode(node, warpObj, source) {
+  const { uploadFn } = warpObj.options
   let resObj
   if (source === 'slideMasterBg') resObj = warpObj['masterResObj']
   else if (source === 'slideLayoutBg') resObj = warpObj['layoutResObj']
@@ -240,7 +243,19 @@ export async function processPicNode(node, warpObj, source) {
   const mimeType = getMimeType(imgFileExt)
   const { top, left } = getPosition(xfrmNode, undefined, undefined, warpObj.options.slideFactor)
   const { width, height } = getSize(xfrmNode, undefined, undefined, warpObj.options.slideFactor)
-  const src = `data:${mimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
+  const blob = await zip.file(imgName).async('blob')
+  let src = ''
+  if (uploadFn) {
+    const name = imgName.split('/').pop() || `${uuidV4()}.${imgFileExt.toLowerCase()}`
+    const file = new File([blob], uuidV4() + name, { type: mimeType, lastModified: Date.now() })
+    const res = await uploadFn([file])
+    src = res?.[0]
+  }
+  else {
+    src = blob
+    // const src = arrayBufferToBlob(imgArrayBuffer, mimeType)
+    // src = `data:${mimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
+  }
 
   let srcPath = media_cache_dir + imgName.replace('ppt/media', '')
 
@@ -301,7 +316,8 @@ export async function processPicNode(node, warpObj, source) {
       width,
       height,
       rotate,
-      blob: videoBlob,
+      // blob: videoBlob,
+      src,
       realPath: srcPath,
     }
   }
@@ -313,7 +329,7 @@ export async function processPicNode(node, warpObj, source) {
       width,
       height,
       rotate,
-      src: videoFile,
+      src,
       realPath: srcPath,
     }
   }
@@ -325,7 +341,8 @@ export async function processPicNode(node, warpObj, source) {
       width,
       height,
       rotate,
-      blob: audioBlob,
+      src,
+      // blob: audioBlob,
       realPath: srcPath,
     }
   }
